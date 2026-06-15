@@ -203,7 +203,7 @@
   // ============================================================ TAB RAIL
   const TABS = [
     ['overview', '🏝️', 'Overview'], ['survivors', '🧑‍🤝‍🧑', 'Survivors'], ['build', '🏗️', 'Build'],
-    ['jobs', '🧰', 'Jobs'], ['research', '🔬', 'Research'], ['explore', '🧭', 'Explore'],
+    ['jobs', '🧰', 'Jobs'], ['inventory', '📦', 'Storage'], ['research', '🔬', 'Research'], ['explore', '🧭', 'Explore'],
     ['trade', '⚖️', 'Trade'], ['quests', '🎯', 'Quests'], ['characters', '⭐', 'Heroes'],
     ['achievements', '🏆', 'Awards'], ['log', '📜', 'Log'],
   ];
@@ -257,6 +257,20 @@
         grow(g.foodOk, 'Food stocked') + grow(g.waterOk, 'Water stocked') +
         grow(g.moraleOk, 'Morale ' + Math.round(s.stats.morale) + ' (need ' + CG.C.POP.moraleForGrowth + '+)') +
         '<div class="grow-foot small">' + (g.canGrow ? '🎉 New settlers are on their way!' : 'Meet every condition and newcomers will arrive.') + '</div>'));
+
+      // automation (unlocked by mid-game buildings)
+      const autos = [['autoAssign', '🧰 Auto-assign idle', 'Town Hall'], ['autoExplore', '🧭 Auto-explore regions', 'Expedition Camp'], ['autoResearch', '🔬 Auto-research', 'School']];
+      const ac = el('div');
+      autos.forEach(([key, label, bld]) => {
+        const row = el('div', { class: 'auto-row' }); row.appendChild(el('span', { html: label }));
+        if (CG.Colony.autoUnlocked(s, key)) {
+          const t = el('button', { class: 'toggle' + (s.automation[key] ? ' on' : ''), text: s.automation[key] ? 'On' : 'Off' });
+          t.addEventListener('click', () => { s.automation[key] = !s.automation[key]; snd('click'); renderActive(true); });
+          row.appendChild(t);
+        } else row.appendChild(el('span', { class: 'small muted', 'data-tip': 'Build a ' + bld + ' to unlock', text: '🔒 ' + bld }));
+        ac.appendChild(row);
+      });
+      side.appendChild(card('Automation', '⚙️', ac));
 
       // heroes strip
       const heroes = el('div', { class: 'heroes-strip' });
@@ -793,6 +807,46 @@
   };
 
   // ---------------- LOG ----------------
+  // ---------------- INVENTORY / STORAGE ----------------
+  let invPrev = null, invPrevT = 0; const invRate = {};
+  PANELS.inventory = {
+    sig: (s) => 'inv|' + CG.RESOURCES.filter((r) => !r.nocap && (s.resources[r.id] || 0) > 0).length + '|' + s.buildings.length,
+    render(host, s) {
+      const c = Eco().cache(s); const pop = s.survivors.length;
+      const waterUse = pop * CG.C.NEEDS.thirstPerDay * (c.needMult.thirst || 1) / 30;
+      const foodUse = pop * CG.C.NEEDS.hungerPerDay * (c.needMult.hunger || 1) / 26;
+      host.appendChild(sectionHead('Storage & Inventory', 'Everything your colony holds, with live per-day rates'));
+      host.appendChild(el('div', { class: 'inv-usage', html: '👥 ' + pop + ' colonists · 💧 Water used ≈ <b>' + fmt(waterUse) + '/day</b> · 🍽️ Food used ≈ <b>' + fmt(foodUse) + '/day</b>' }));
+      [['natural', '🌿 Natural'], ['advanced', '🏭 Advanced'], ['luxury', '💎 Luxury'], ['abstract', '💠 Other']].forEach(([cat, title]) => {
+        const list = CG.RESOURCES.filter((r) => r.cat === cat); if (!list.length) return;
+        host.appendChild(el('div', { class: 'jgroup-title', html: title }));
+        const grid = el('div', { class: 'inv-grid' });
+        list.forEach((r) => grid.appendChild(invRow(s, r, c)));
+        host.appendChild(grid);
+      });
+    },
+    live(host, s) {
+      const c = Eco().cache(s);
+      const now = performance.now(); const dt = (now - invPrevT) / 1000; invPrevT = now; const can = dt > 0 && dt < 1;
+      CG.$$('.inv-cell', host).forEach((cell) => {
+        const r = cell.dataset.res; const cur = Eco().amountOf(s, r);
+        if (can) { let per; if (r === 'research') per = Eco().researchRate(s); else { const prev = invPrev ? (invPrev[r] || 0) : cur; per = (cur - prev) / dt; } invRate[r] = invRate[r] == null ? per : invRate[r] * 0.8 + per * 0.2; }
+        const cap = CG.RES[r].nocap ? null : c.cap[r];
+        const h = cell.querySelector('.iv-have'); if (h) { h.textContent = fmt(cur) + (cap != null ? ' / ' + fmt(cap) : ''); h.classList.toggle('full', cap != null && cur >= cap - 0.5); }
+        const rc = cell.querySelector('.iv-rate'); const pd = (invRate[r] || 0) * CG.C.DAY_SECONDS;
+        if (rc) { rc.textContent = Math.abs(pd) < 0.05 ? '—' : (pd >= 0 ? '+' : '') + fmt(pd) + '/day'; rc.className = 'iv-rate small ' + (pd > 0.05 ? 'up' : pd < -0.05 ? 'dn' : ''); }
+      });
+      invPrev = Object.assign({}, s.resources); invPrev.research = s.research; invPrev.coin = s.coin;
+    },
+  };
+  function invRow(s, r, c) {
+    const cur = Eco().amountOf(s, r.id); const cap = r.nocap ? null : c.cap[r.id];
+    const cell = el('div', { class: 'inv-cell', dataset: { res: r.id }, 'data-tip': '<b>' + r.name + '</b>' + (r.value ? '<br>Trade value: ' + r.value : '') });
+    cell.innerHTML = '<span class="iv-ic">' + r.icon + '</span><span class="iv-n">' + r.name + '</span>' +
+      '<span class="iv-right"><span class="iv-have">' + fmt(cur) + (cap != null ? ' / ' + fmt(cap) : '') + '</span><span class="iv-rate small">—</span></span>';
+    return cell;
+  }
+
   PANELS.log = {
     sig: (s) => 'l|' + (s.log[0] ? s.log[0].t : 0) + s.log.length,
     render(host, s) {

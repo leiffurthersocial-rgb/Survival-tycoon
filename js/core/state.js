@@ -61,6 +61,7 @@
         flags: {},
         victory: false, victorySeenAt: null, sandbox: false,
         tutorialStep: 0, tutorialDone: false,
+        automation: { autoAssign: false, autoExplore: false, autoResearch: false },
         _cache: null,
       };
 

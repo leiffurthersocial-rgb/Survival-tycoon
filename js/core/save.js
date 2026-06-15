@@ -50,6 +50,7 @@
         CG.State.log(merged, ch.name + ' has joined your colony!', 'good');
       }
     });
+    merged.automation = Object.assign({ autoAssign: false, autoExplore: false, autoResearch: false }, s.automation || {});
     merged._cache = null;
     return merged;
   }

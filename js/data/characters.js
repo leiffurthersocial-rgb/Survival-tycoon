@@ -133,13 +133,14 @@
   // Expand a character's current bonuses (base scaling + unlocked skills) to effects[].
   CG.charEffects = function (char, level, unlocked) {
     const out = [];
+    const L = level + 2; // heroes are already skilled at level 1 (acts like level 3)
     (char.base || []).forEach((b) => {
       if (b.perLevelMult != null) {
-        let m = 1 + b.perLevelMult * level;
+        let m = 1 + b.perLevelMult * L;
         if (b.floor != null) m = Math.max(b.floor, m);
         out.push({ type: b.type, job: b.job, res: b.res, need: b.need, mult: m });
       } else if (b.perLevelAdd != null) {
-        out.push({ type: b.type, job: b.job, res: b.res, amt: b.perLevelAdd * level });
+        out.push({ type: b.type, job: b.job, res: b.res, amt: b.perLevelAdd * L });
       }
     });
     (char.skills || []).forEach((s) => {

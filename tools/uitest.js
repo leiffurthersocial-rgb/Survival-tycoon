@@ -56,7 +56,7 @@ ok('rail has tabs', win.document.querySelectorAll('.rail-btn').length >= 10);
 ok('content populated', win.document.querySelector('.content').children.length > 0);
 
 console.log('\n=== TAB SWEEP ===');
-const TABS = ['overview', 'survivors', 'build', 'jobs', 'research', 'explore', 'trade', 'quests', 'characters', 'achievements', 'log'];
+const TABS = ['overview', 'survivors', 'build', 'jobs', 'inventory', 'research', 'explore', 'trade', 'quests', 'characters', 'achievements', 'log'];
 TABS.forEach((t) => {
   const n0 = errors.length;
   try { CG.UI.switchTab(t); CG.emit('render'); } catch (e) { errors.push('tab ' + t + ': ' + e.stack); }
@@ -91,6 +91,10 @@ CG.Engine.setSpeed(4);
 console.log('\n=== SIMULATE GAMEPLAY (UI live updates) ===');
 let simErr = null;
 try {
+  // exercise automation code paths: unlock + enable all toggles
+  CG.state.automation = { autoAssign: true, autoExplore: true, autoResearch: true };
+  ['town_hall', 'expedition_camp', 'school'].forEach((id) => CG.state.buildings.push({ uid: CG.uid('b'), id, level: 1, builtDay: 1, x: 50, y: 50 }));
+  CG.state.regions.explored.palmforest = true; CG.Economy.recompute(CG.state);
   for (let i = 0; i < 2500; i++) {
     CG.Engine.step(1.0, 0.25);
     if (i % 40 === 0) {

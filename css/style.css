@@ -231,6 +231,16 @@ h1,h2{font-weight:700}
 .grow-row{font-size:12px;padding:2px 0}
 .grow-row.no{color:var(--warn)}
 .grow-foot{margin-top:7px;color:var(--muted)}
+.auto-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;border-bottom:1px solid var(--line)}
+.auto-row:last-child{border-bottom:0}
+.inv-usage{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r2);padding:10px 13px;margin-bottom:12px;font-size:13px;color:var(--sand)}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:7px;margin-bottom:6px}
+.inv-cell{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.iv-ic{font-size:17px}.iv-n{flex:1;font-size:12.5px}
+.iv-right{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25}
+.iv-have{font-weight:700;font-size:12px;color:var(--cyan)}
+.iv-have.full{color:var(--warn)}
+.iv-rate{color:var(--muted)}.iv-rate.up{color:var(--good)}.iv-rate.dn{color:var(--bad)}
 
 /* ---------- research ---------- */
 .rp-balance{display:flex;align-items:center;gap:10px}

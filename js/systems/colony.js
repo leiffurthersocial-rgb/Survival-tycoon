@@ -80,14 +80,38 @@
   // one-click: spread idle workers across useful jobs (never unassigns anyone)
   const AUTO_PRIO = ['fish', 'water', 'forage', 'mine_stone', 'woodcut', 'hunt', 'farm', 'dig_clay', 'dig_sand',
     'sawmill', 'charcoal', 'kiln', 'smelt', 'tannery', 'ropewalk', 'weaver', 'bakery', 'blacksmith', 'glassworks', 'steelworks', 'build', 'research'];
-  function autoAssignIdle(s) {
+  function autoAssignIdle(s, silent) {
     let assigned = 0, pass = true;
     while (pass && idleCount(s) > 0) {
       pass = false;
       for (const j of AUTO_PRIO) { if (idleCount(s) <= 0) break; if (slotsFree(s, j) > 0 && addToJob(s, j, 1)) { assigned++; pass = true; } }
     }
-    if (assigned) CG.emit('toast', { text: 'Assigned ' + assigned + ' idle worker' + (assigned > 1 ? 's' : '') + '.', type: 'good', icon: '🧰' });
+    if (assigned && !silent) CG.emit('toast', { text: 'Assigned ' + assigned + ' idle worker' + (assigned > 1 ? 's' : '') + '.', type: 'good', icon: '🧰' });
     return assigned;
+  }
+
+  // ---- automation (unlocked by mid-game buildings; deliberately modest) ----
+  const AUTO_UNLOCK = { autoAssign: 'town_hall', autoExplore: 'expedition_camp', autoResearch: 'school' };
+  function autoUnlocked(s, key) { return s.buildings.some((b) => b.id === AUTO_UNLOCK[key]); }
+  function automationTick(s, dt) {
+    const a = s.automation; if (!a) return;
+    s._autoTimer = (s._autoTimer || 0) + (dt || 0.5) / C.DAY_SECONDS;
+    if (s._autoTimer < 0.5) return;  // act roughly twice a day
+    s._autoTimer = 0;
+    // auto-explore first so it can reserve idle workers before auto-assign grabs them
+    if (a.autoExplore && autoUnlocked(s, 'autoExplore') && !s.regions.expeditions.length) {
+      const regs = CG.REGIONS.filter((r) => s.regions.explored[r.id]);
+      if (regs.length) {
+        s._autoRegIdx = ((s._autoRegIdx || 0) + 1) % regs.length;
+        const idle = s.survivors.filter((x) => !x.job && !onExp(s, x.sid)).slice(0, 2).map((x) => x.sid);
+        if (idle.length) CG.Exploration.start(s, regs[s._autoRegIdx].id, idle);
+      }
+    }
+    if (a.autoAssign && autoUnlocked(s, 'autoAssign')) autoAssignIdle(s, true);
+    if (a.autoResearch && autoUnlocked(s, 'autoResearch') && !s.tech.current) {
+      const t = CG.Research.available(s).sort((x, y) => x.cost - y.cost)[0];
+      if (t) CG.Research.setFocus(s, t.id);
+    }
   }
 
   function addSettler(s, reason) {
@@ -122,5 +146,5 @@
     return { ok: true };
   }
 
-  CG.Colony = { workersIn, slots, slotsFree, isUnlocked, assign, addToJob, removeFromJob, idleCount, popTick, addSettler, attractiveness, canSpend, spendSkill, onExp, growthStatus, autoAssignIdle };
+  CG.Colony = { workersIn, slots, slotsFree, isUnlocked, assign, addToJob, removeFromJob, idleCount, popTick, addSettler, attractiveness, canSpend, spendSkill, onExp, growthStatus, autoAssignIdle, automationTick, autoUnlocked };
 })(typeof window !== 'undefined' ? window : globalThis);

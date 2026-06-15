@@ -59,6 +59,7 @@
     while (slowAcc >= 0.5 && guard++ < 20) {
       slowAcc -= 0.5;
       CG.Colony.popTick(s, 0.5);
+      CG.Colony.automationTick(s, 0.5);
       CG.Events.maybeFire(s);
       CG.Quests.tick(s);
       CG.Achievements.tick(s);
