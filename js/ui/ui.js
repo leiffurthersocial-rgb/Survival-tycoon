@@ -235,6 +235,7 @@
   PANELS.overview = {
     sig: (s) => s.buildings.length + '|' + s.survivors.length + '|' + s.stats.stage + '|' + s.regions.expeditions.length + '|' + s.buffs.length + '|' + (s.quests.active[0] || '') + '|' + s.queue.length,
     render(host, s) {
+      const c = Eco().cache(s);
       const wrap = el('div', { class: 'ov' });
       const scene = el('div', { class: 'scene', id: 'scene' });
       wrap.appendChild(scene);
@@ -246,6 +247,16 @@
       const pctp = st >= 7 ? 100 : ((score - lo) / (hi - lo)) * 100;
       side.appendChild(card('Settlement', '🌟', '<div class="stage-name">' + CG.C.STAGE_NAMES[st] + '</div>' +
         bar(pctp, 'stage') + '<div class="muted small">' + (st >= 7 ? 'Maximum stage reached' : 'Progress to ' + CG.C.STAGE_NAMES[st + 1]) + '</div>'));
+
+      // colony growth — shows clearly when new settlers will arrive
+      const g = CG.Colony.growthStatus(s); const pop = s.survivors.length; const beds = Math.floor(c.housing);
+      const grow = (ok, t) => '<div class="grow-row ' + (ok ? 'ok' : 'no') + '">' + (ok ? '✅' : '⚠️') + ' ' + t + '</div>';
+      side.appendChild(card('Colony Growth', '👶',
+        '<div class="grow-top">👥 ' + pop + ' colonists · 🛏️ ' + beds + ' beds (' + Math.max(0, g.freeBeds) + ' free)</div>' +
+        grow(g.housingOk, g.housingOk ? 'Spare housing' : 'Need free housing — build homes') +
+        grow(g.foodOk, 'Food stocked') + grow(g.waterOk, 'Water stocked') +
+        grow(g.moraleOk, 'Morale ' + Math.round(s.stats.morale) + ' (need ' + CG.C.POP.moraleForGrowth + '+)') +
+        '<div class="grow-foot small">' + (g.canGrow ? '🎉 New settlers are on their way!' : 'Meet every condition and newcomers will arrive.') + '</div>'));
 
       // heroes strip
       const heroes = el('div', { class: 'heroes-strip' });
@@ -462,7 +473,12 @@
     sig: (s) => 'j|' + s.survivors.map((x) => x.job).join(',') + '|' + s.buildings.map((b) => b.id + b.level).join(',') + '|' + Object.keys(s.tech.researched).length,
     render(host, s) {
       const c = Eco().cache(s);
-      const head = sectionHead('Jobs & Production', CG.Colony.idleCount(s) + ' idle workers — assign them to grow your colony');
+      const idle = CG.Colony.idleCount(s);
+      const head = sectionHead('Jobs & Production', idle + ' idle worker' + (idle !== 1 ? 's' : '') + ' — put them to work to grow your colony');
+      const auto = el('button', { class: 'btn tiny primary', text: '✨ Auto-assign idle', 'data-tip': 'Spread all idle workers across useful jobs' });
+      auto.disabled = !idle;
+      auto.addEventListener('click', () => { if (CG.Colony.autoAssignIdle(s)) { snd('gather'); renderActive(true); } });
+      head.appendChild(auto);
       host.appendChild(head);
       const groups = { gather: [], refine: [], research: [], build: [], service: [] };
       unlockedJobList(s).forEach((j) => { (groups[j.kind] || groups.service).push(j); });
@@ -474,6 +490,18 @@
         groups[k].forEach((j) => grid.appendChild(jobCard(s, j)));
         host.appendChild(grid);
       });
+      // locked jobs with a clear "how to unlock" path (e.g. how to get wood)
+      const locked = CG.JOBS.filter((j) => {
+        if (c.unlockedJobs[j.id] || (j.kind !== 'gather' && j.kind !== 'refine')) return false;
+        const b = jobProvider(j.id); if (!b) return false;
+        return j.kind === 'gather' || CG.Construction.unlocked(s, b);
+      });
+      if (locked.length) {
+        host.appendChild(el('div', { class: 'jgroup-title', html: "🔒 Locked jobs — here's how to unlock them" }));
+        const grid = el('div', { class: 'job-grid' });
+        locked.forEach((j) => grid.appendChild(lockedJobCard(s, j)));
+        host.appendChild(grid);
+      }
     },
     live(host, s) {
       CG.$$('.jcard', host).forEach((card) => {
@@ -496,6 +524,24 @@
     plus.addEventListener('click', () => { if (CG.Colony.addToJob(s, j.id, 1)) { snd('gather'); renderActive(true); } else toast(CG.Colony.idleCount(s) ? 'No free slots — build more.' : 'No idle workers.', 'bad'); });
     ctrl.append(minus, plus);
     card.appendChild(ctrl);
+    return card;
+  }
+  function jobProvider(jobId) { return CG.BUILDINGS.find((B) => ((B.provides || {}).stations || []).some((st) => st.job === jobId)); }
+  function jobUnlockHint(s, jobId) {
+    const b = jobProvider(jobId); if (!b) return 'Unlocked through research.';
+    const req = b.requires || {}; const parts = [];
+    const mr = (req.region || []).filter((r) => !s.regions.explored[r]).map((r) => CG.REGION[r] ? CG.REGION[r].icon + ' ' + CG.REGION[r].name : r);
+    const mt = (req.tech || []).filter((t) => !s.tech.researched[t]).map((t) => CG.TECHById[t] ? CG.TECHById[t].name : t);
+    if (mr.length) parts.push('🧭 Explore ' + mr.join(' & '));
+    if (mt.length) parts.push('🔬 Research ' + mt.join(' & '));
+    parts.push((parts.length ? 'then ' : '') + '🏗️ build ' + b.icon + ' ' + b.name);
+    return parts.join(' → ');
+  }
+  function lockedJobCard(s, j) {
+    const card = el('div', { class: 'jcard locked' });
+    card.innerHTML = '<div class="jc-top"><span class="jc-ic">' + j.icon + '</span><span class="jc-name">' + j.name + '</span><span class="tag">🔒</span></div>' +
+      '<div class="jc-desc small">' + j.desc + '</div>' +
+      '<div class="jc-hint small">' + jobUnlockHint(s, j.id) + '</div>';
     return card;
   }
   function jobOutputStr(s, job) {
@@ -865,7 +911,7 @@
   function welcome(returning) {
     const body = el('div', { class: 'welcome' });
     body.innerHTML =
-      '<p>' + (returning ? '' : 'Four survivors — <b>Robin</b>, <b>Lenni</b>, <b>Leif</b> and <b>Erim</b> — wash ashore after a shipwreck. ') +
+      '<p>' + (returning ? '' : 'Six survivors — <b>Robin</b>, <b>Lenni</b>, <b>Leif</b>, <b>Erim</b>, <b>Jovan</b> and <b>Leonidas</b> — wash ashore after a shipwreck. ') +
       'Your task: turn a desperate beach camp into a thriving island colony.</p>' +
       '<div class="how-grid">' +
       howItem('🧰', 'Assign Jobs', 'Send survivors to gather food, water and materials. Idle hands get nothing done.') +

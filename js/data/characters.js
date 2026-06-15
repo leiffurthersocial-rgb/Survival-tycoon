@@ -85,6 +85,44 @@
         { id: 'e_diplomat', name: 'Diplomat', icon: '🕊️', cost: 4, req: ['e_organizer', 'e_merchant'], desc: '+10 attractiveness; +15% population growth.', effects: [{ type: 'attract', amt: 10 }, { type: 'pop_growth', mult: 1.15 }] },
       ],
     },
+    {
+      id: 'jovan', name: 'Jovan', role: 'Fisher & Cook', icon: '🍳', color: '#e0a93b',
+      img: 'assets/jovan.jpeg',
+      blurb: 'Jovan can coax a feast from a single fish. Wherever he works the nets fill and the camp eats well — and a well-fed colony is a happy one.',
+      affinity: ['fish', 'forage', 'bakery'], favJob: 'fish',
+      base: [
+        { type: 'prod_mult', job: 'fish', perLevelMult: 0.035 },
+        { type: 'res_mult', res: 'fish', perLevelMult: 0.02 },
+        { type: 'morale', perLevelAdd: 0.3 },
+      ],
+      skills: [
+        { id: 'j_angler', name: 'Angler', icon: '🎣', cost: 1, req: [], desc: '+20% fishing.', effects: [{ type: 'prod_mult', job: 'fish', mult: 1.2 }] },
+        { id: 'j_cook', name: 'Camp Cook', icon: '🍲', cost: 1, req: [], desc: '+4 morale and more food variety.', effects: [{ type: 'morale', amt: 4 }, { type: 'food_variety', amt: 1 }] },
+        { id: 'j_nets', name: 'Fine Nets', icon: '🕸️', cost: 2, req: ['j_angler'], desc: '+15% fishing; +1 fisher slot.', effects: [{ type: 'prod_mult', job: 'fish', mult: 1.15 }, { type: 'station_add', job: 'fish', slots: 1 }] },
+        { id: 'j_smoker', name: 'Smokehouse', icon: '💨', cost: 2, req: ['j_cook'], desc: '+15% fish & meat yield.', effects: [{ type: 'res_mult', res: 'fish', mult: 1.15 }, { type: 'res_mult', res: 'meat', mult: 1.15 }] },
+        { id: 'j_provisioner', name: 'Provisioner', icon: '🥘', cost: 3, req: ['j_smoker'], desc: 'Colonists get hungry 10% slower.', effects: [{ type: 'need_rate', need: 'hunger', mult: 0.9 }] },
+        { id: 'j_masterchef', name: 'Master Chef', icon: '👨‍🍳', cost: 4, req: ['j_provisioner', 'j_nets'], desc: '+8 morale; +3% all production.', effects: [{ type: 'morale', amt: 8 }, { type: 'global_prod', mult: 1.03 }] },
+      ],
+    },
+    {
+      id: 'leonidas', name: 'Leonidas', role: 'Warrior & Guardian', icon: '🛡️', color: '#c0504d',
+      img: 'assets/leonidas.jpeg',
+      blurb: 'Steadfast and fearless, Leonidas guards the camp, leads the hunt, and keeps spirits high when the island turns dangerous.',
+      affinity: ['hunt', 'mine_stone', 'build'], favJob: 'hunt',
+      base: [
+        { type: 'hunt_success', perLevelMult: 0.035 },
+        { type: 'morale', perLevelAdd: 0.35 },
+        { type: 'expedition_cost', perLevelMult: -0.012, floor: 0.6 },
+      ],
+      skills: [
+        { id: 'n_hunter', name: 'Skilled Hunter', icon: '🏹', cost: 1, req: [], desc: '+20% hunting.', effects: [{ type: 'prod_mult', job: 'hunt', mult: 1.2 }] },
+        { id: 'n_guard', name: 'Guardian', icon: '🛡️', cost: 1, req: [], desc: '+6 settlement morale.', effects: [{ type: 'morale', amt: 6 }] },
+        { id: 'n_vanguard', name: 'Vanguard', icon: '⚔️', cost: 2, req: ['n_hunter'], desc: '+15% explore speed; +6% rare finds.', effects: [{ type: 'explore_speed', mult: 1.15 }, { type: 'rare_chance', add: 0.06 }] },
+        { id: 'n_fortify', name: 'Fortifier', icon: '🧱', cost: 2, req: ['n_guard'], desc: '+15% build speed; +10% stone.', effects: [{ type: 'build_speed', mult: 1.15 }, { type: 'prod_mult', job: 'mine_stone', mult: 1.1 }] },
+        { id: 'n_quarter', name: 'Field Quartermaster', icon: '🎖️', cost: 3, req: ['n_vanguard'], desc: '-20% expedition supply cost; +10% hunting.', effects: [{ type: 'expedition_cost', mult: 0.8 }, { type: 'prod_mult', job: 'hunt', mult: 1.1 }] },
+        { id: 'n_champion', name: 'Champion', icon: '👑', cost: 4, req: ['n_quarter', 'n_fortify'], desc: '+10 morale; +4% all production.', effects: [{ type: 'morale', amt: 10 }, { type: 'global_prod', mult: 1.04 }] },
+      ],
+    },
   ];
 
   const byId = {};

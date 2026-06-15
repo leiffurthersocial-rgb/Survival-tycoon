@@ -42,6 +42,14 @@
     merged.quests = Object.assign({ active: [], completed: {}, progress: {}, offered: {} }, s.quests || {});
     merged.achievements = Object.assign({ unlocked: {} }, s.achievements || {});
     merged.events = Object.assign({ lastEventDay: 1, seen: {}, cooldowns: {}, oneShot: {}, pending: null, history: [] }, s.events || {});
+    // ensure every named hero exists (lets older saves gain heroes added later)
+    CG.CHARS.forEach((ch) => {
+      if (!merged.survivors.some((x) => x.charId === ch.id)) {
+        const nv = CG.State.makeNamedSurvivor(ch.id);
+        merged.survivors.push(nv);
+        CG.State.log(merged, ch.name + ' has joined your colony!', 'good');
+      }
+    });
     merged._cache = null;
     return merged;
   }

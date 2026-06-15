@@ -14,8 +14,8 @@
     SETTINGS_KEY: 'castaway_settings_v1',
 
     START: {
-      survivors: ['robin', 'lenni', 'leif', 'erim'],
-      resources: { fish: 12, fruit: 8, water: 14, sticks: 6, fiber: 4, wood: 0, stone: 0 },
+      survivors: ['robin', 'lenni', 'leif', 'erim', 'jovan', 'leonidas'],
+      resources: { fish: 18, fruit: 12, water: 22, sticks: 10, fiber: 8, wood: 0, stone: 2 },
       research: 0, coin: 8,
       baseStorage: 60,         // per-resource cap before storage buildings
     },
@@ -85,12 +85,12 @@
 
     // Population growth
     POP: {
-      checkEveryDays: 1.5,
-      baseChance: 0.0,         // computed from surplus/morale/attractiveness
-      foodSurplusForGrowth: 4, // food/day surplus needed to consider growth
-      moraleForGrowth: 55,
-      maxChancePerCheck: 0.55,
-      startCap: 4,             // housing-derived; named four are the start
+      checkEveryDays: 1.0,     // check often so newcomers arrive promptly when housing is free
+      baseChance: 0.0,
+      foodSurplusForGrowth: 4,
+      moraleForGrowth: 50,
+      maxChancePerCheck: 0.7,  // with spare housing + food + decent morale, growth is reliable
+      startCap: 6,
     },
 
     // Exploration

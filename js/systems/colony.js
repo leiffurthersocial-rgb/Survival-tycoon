@@ -67,6 +67,29 @@
     if (CG.RNG.chance(chance)) addSettler(s, 'A new settler was drawn to your growing colony.');
   }
 
+  // status of population growth, for a clear UI indicator ("reproduction" / newcomers)
+  function growthStatus(s) {
+    const c = E().cache(s); const pop = s.survivors.length;
+    const freeBeds = Math.floor(c.housing) - pop;
+    const foodOk = E().foodStock(s) >= pop * 6;
+    const waterOk = (s.resources.water || 0) >= pop * 4;
+    const moraleOk = s.stats.morale >= C.POP.moraleForGrowth;
+    return { freeBeds, housingOk: freeBeds > 0, foodOk, waterOk, moraleOk, canGrow: freeBeds > 0 && foodOk && waterOk && moraleOk };
+  }
+
+  // one-click: spread idle workers across useful jobs (never unassigns anyone)
+  const AUTO_PRIO = ['fish', 'water', 'forage', 'mine_stone', 'woodcut', 'hunt', 'farm', 'dig_clay', 'dig_sand',
+    'sawmill', 'charcoal', 'kiln', 'smelt', 'tannery', 'ropewalk', 'weaver', 'bakery', 'blacksmith', 'glassworks', 'steelworks', 'build', 'research'];
+  function autoAssignIdle(s) {
+    let assigned = 0, pass = true;
+    while (pass && idleCount(s) > 0) {
+      pass = false;
+      for (const j of AUTO_PRIO) { if (idleCount(s) <= 0) break; if (slotsFree(s, j) > 0 && addToJob(s, j, 1)) { assigned++; pass = true; } }
+    }
+    if (assigned) CG.emit('toast', { text: 'Assigned ' + assigned + ' idle worker' + (assigned > 1 ? 's' : '') + '.', type: 'good', icon: '🧰' });
+    return assigned;
+  }
+
   function addSettler(s, reason) {
     const sv = CG.State.makeSettler();
     s.survivors.push(sv);
@@ -99,5 +122,5 @@
     return { ok: true };
   }
 
-  CG.Colony = { workersIn, slots, slotsFree, isUnlocked, assign, addToJob, removeFromJob, idleCount, popTick, addSettler, attractiveness, canSpend, spendSkill, onExp };
+  CG.Colony = { workersIn, slots, slotsFree, isUnlocked, assign, addToJob, removeFromJob, idleCount, popTick, addSettler, attractiveness, canSpend, spendSkill, onExp, growthStatus, autoAssignIdle };
 })(typeof window !== 'undefined' ? window : globalThis);

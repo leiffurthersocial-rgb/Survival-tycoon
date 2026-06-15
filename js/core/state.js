@@ -6,7 +6,7 @@
 
   function makeStats() {
     return {
-      playtime: 0, days: 0, population: 4, peakPopulation: 4, settlersArrived: 0, deaths: 0,
+      playtime: 0, days: 0, population: 6, peakPopulation: 6, settlersArrived: 0, deaths: 0,
       buildingsBuilt: 0, buildingsByType: {}, buildingUpgrades: 0, demolitions: 0,
       techResearched: 0, techByCat: {}, researchSpent: 0,
       regionsExplored: 1, expeditionsRun: 0, raresFound: 0,
@@ -38,7 +38,7 @@
   }
 
   CG.State = {
-    makeStats, defaultSettings,
+    makeStats, defaultSettings, makeNamedSurvivor,
 
     newGame() {
       const s = {
@@ -71,7 +71,7 @@
       // the four named survivors
       C.START.survivors.forEach((cid) => s.survivors.push(makeNamedSurvivor(cid)));
       // sensible starting assignments so the player sees production immediately
-      const assign = { robin: 'forage', lenni: 'water', leif: 'fish', erim: 'fish' };
+      const assign = { robin: 'forage', lenni: 'forage', leif: 'fish', erim: 'fish', jovan: 'water', leonidas: 'mine_stone' };
       s.survivors.forEach((sv) => { if (sv.charId && assign[sv.charId]) sv.job = assign[sv.charId]; });
 
       return s;
