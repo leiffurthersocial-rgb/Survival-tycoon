@@ -21,7 +21,7 @@
     CG.Engine.start();
 
     if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); }
-    if (!hasAuto) CG.UI.welcome(false);
+    if (!hasAuto) CG.UI.chooseFaction();
 
     // unlock WebAudio on first interaction (browser autoplay policy)
     const unlock = () => { CG.Audio.ensure(); root.removeEventListener('pointerdown', unlock); root.removeEventListener('keydown', unlock); };

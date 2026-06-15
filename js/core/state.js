@@ -62,6 +62,8 @@
         victory: false, victorySeenAt: null, sandbox: false,
         tutorialStep: 0, tutorialDone: false,
         automation: { autoAssign: false, autoExplore: false, autoResearch: false },
+        taxRate: 0, faction: null,
+        market: { mod: {}, stock: {}, day: 1 },
         _cache: null,
       };
 
@@ -72,7 +74,7 @@
       // the four named survivors
       C.START.survivors.forEach((cid) => s.survivors.push(makeNamedSurvivor(cid)));
       // sensible starting assignments so the player sees production immediately
-      const assign = { robin: 'forage', lenni: 'forage', leif: 'fish', erim: 'fish', jovan: 'water', leonidas: 'mine_stone' };
+      const assign = { robin: 'forage', lenni: 'research', leif: 'fish', erim: 'fish', jovan: 'water', leonidas: 'mine_stone', till: 'forage', tusya: 'mine_stone' };
       s.survivors.forEach((sv) => { if (sv.charId && assign[sv.charId]) sv.job = assign[sv.charId]; });
 
       return s;

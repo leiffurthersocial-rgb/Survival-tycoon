@@ -121,6 +121,7 @@
     if (anyStarving) t -= M.starvingPenalty;
     if (anyThirsty) t -= M.thirstyPenalty;
     if (s._avgHealth != null && s._avgHealth < 50) t -= (50 - s._avgHealth) * 0.4;
+    if (s.taxRate) t -= Math.max(0, s.taxRate - C.TAX.moraleFreeRate) * C.TAX.moralePenaltyPerRate;
     return CG.clamp(t, M.min, M.max);
   }
 

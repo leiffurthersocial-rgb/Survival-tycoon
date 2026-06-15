@@ -401,10 +401,10 @@
         CATS.forEach(([id, name]) => { const b = el('button', { class: 'fbtn' + (buildFilter === id ? ' on' : ''), text: name }); b.addEventListener('click', () => { buildFilter = id; snd('click'); renderActive(true); }); filt.appendChild(b); });
         host.appendChild(filt);
         const grid = el('div', { class: 'card-grid' });
-        let menu = CG.Construction.buildMenu(s);
+        let menu = CG.Construction.buildMenu(s).filter((m) => !m.built); // unique: built ones move to Constructed
         if (buildFilter !== 'all') menu = menu.filter((m) => m.def.cat === buildFilter);
         menu.sort((a, b) => a.def.tier - b.def.tier);
-        if (!menu.length) grid.appendChild(el('div', { class: 'muted', text: 'Research and explore to unlock more buildings.' }));
+        if (!menu.length) grid.appendChild(el('div', { class: 'muted', text: 'All available buildings are built — upgrade them in Constructed, or research & explore for more.' }));
         menu.forEach((m) => grid.appendChild(buildCard(s, m)));
         host.appendChild(grid);
       } else {
@@ -686,7 +686,15 @@
       const rec = el('button', { class: 'btn', text: '🧑 Recruit settler · 🪙' + CG.Trade.recruitCost(s) });
       rec.disabled = !CG.Trade.canRecruit(s); rec.setAttribute('data-tip', 'Costs coin & needs a free bed');
       rec.addEventListener('click', () => { const r = CG.Trade.recruit(s); if (r.ok) { snd('coin'); renderActive(true); } else toast(r.why, 'bad'); });
-      top.appendChild(rec); host.appendChild(top);
+      top.appendChild(rec);
+      // taxation
+      const tax = el('div', { class: 'tax-box' });
+      tax.appendChild(el('span', { class: 'small', html: '🏛️ Tax citizens:' }));
+      [['Off', 0], ['Low', 0.4], ['Med', 0.8], ['High', 1.2]].forEach(([l, v]) => { const b = el('button', { class: 'seg-b' + (s.taxRate === v ? ' on' : ''), text: l }); b.addEventListener('click', () => { s.taxRate = v; snd('click'); renderActive(true); }); tax.appendChild(b); });
+      const income = Math.round(s.survivors.length * CG.C.TAX.perCitizen * s.taxRate);
+      tax.appendChild(el('span', { class: 'small muted', html: '≈🪙' + income + '/day' + (s.taxRate > CG.C.TAX.moraleFreeRate ? ' · ⚠️ angers people' : '') }));
+      top.appendChild(tax);
+      host.appendChild(top);
 
       const tbl = el('div', { class: 'trade-tbl' });
       tbl.appendChild(el('div', { class: 'tt-head small', html: '<span>Resource</span><span>Have</span><span>Sell @</span><span>Sell</span><span>Buy @</span><span>Buy</span>' }));
@@ -702,9 +710,10 @@
     const sellBox = el('span', { class: 'tr-act' });
     [['1', 1], ['10', 10], ['Max', 'max']].forEach(([l, q]) => { const b = el('button', { class: 'btn tiny', text: l }); b.addEventListener('click', () => { const qty = q === 'max' ? Math.floor(Eco().amountOf(s, res)) : q; const r = CG.Trade.sell(s, res, qty); if (r.ok) { snd('coin'); renderActive(true); } else toast(r.why, 'bad'); }); sellBox.appendChild(b); });
     row.appendChild(sellBox);
-    row.appendChild(el('span', { class: 'tr-p', html: '🪙' + bp }));
+    const stock = CG.Trade.stockOf(s, res);
+    row.appendChild(el('span', { class: 'tr-p', html: stock <= 0 ? '<span class="oos">Out of stock</span>' : '🪙' + bp + ' <span class="muted">·📦' + stock + '</span>' }));
     const buyBox = el('span', { class: 'tr-act' });
-    [['1', 1], ['10', 10]].forEach(([l, q]) => { const b = el('button', { class: 'btn tiny ghost', text: '+' + l }); b.addEventListener('click', () => { const r = CG.Trade.buy(s, res, q); if (r.ok) { snd('coin'); renderActive(true); } else toast(r.why, 'bad'); }); buyBox.appendChild(b); });
+    [['1', 1], ['10', 10]].forEach(([l, q]) => { const b = el('button', { class: 'btn tiny ghost', text: '+' + l }); b.disabled = stock <= 0; b.addEventListener('click', () => { const r = CG.Trade.buy(s, res, q); if (r.ok) { snd('coin'); renderActive(true); } else toast(r.why, 'bad'); }); buyBox.appendChild(b); });
     row.appendChild(buyBox);
     return row;
   }
@@ -923,7 +932,7 @@
 
   function newGameConfirm() {
     modal({ title: '🆕 New Game', body: '<p>Start a fresh shipwreck? Your current colony autosaves to the Autosave slot.</p>', cls: 'sm',
-      actions: [{ text: 'Cancel' }, { text: 'New Game', cls: 'danger', fn: () => { CG.Save.save(S(), 'auto'); const st = CG.State.newGame(); CG.Engine.bind(st); switchTab('overview'); welcome(false); } }] });
+      actions: [{ text: 'Cancel' }, { text: 'New Game', cls: 'danger', fn: () => { CG.Save.save(S(), 'auto'); const st = CG.State.newGame(); CG.Engine.bind(st); switchTab('overview'); chooseFaction(); } }] });
   }
 
   // event modal
@@ -1050,5 +1059,17 @@
     setBadge('jobs', idle || '');
   }
 
-  CG.UI = { boot, toast, modal, welcome, switchTab, applySettings };
+  function chooseFaction() {
+    const body = el('div', { class: 'fac-grid' });
+    Object.keys(CG.FACTIONS).forEach((id) => {
+      const f = CG.FACTIONS[id];
+      const b = el('button', { class: 'fac-card' });
+      b.innerHTML = '<div class="fac-ic">' + f.icon + '</div><b>' + f.name + '</b><div class="small">' + f.desc + '</div>';
+      b.addEventListener('click', () => { S().faction = id; CG.Economy.recompute(S()); snd('complete'); m.close(); toast('You are ' + f.name + '!', 'good', f.icon); switchTab('overview'); welcome(false); });
+      body.appendChild(b);
+    });
+    const m = modal({ title: '🏴 Choose your people', body, cls: 'big', dismiss: false });
+  }
+
+  CG.UI = { boot, toast, modal, welcome, switchTab, applySettings, chooseFaction };
 })(typeof window !== 'undefined' ? window : globalThis);

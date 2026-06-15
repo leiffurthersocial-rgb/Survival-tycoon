@@ -22,7 +22,7 @@
     { id: 'water_collector', name: 'Water Collector', cat: 'survival', tier: 1, icon: '🪣',
       desc: 'Broad leaves funnel rain into hollow logs. A trickle of fresh water.',
       cost: { sticks: 6, fiber: 4, stone: 2 }, buildTime: 10, maxLevel: 4, upCostMult: 1.7, upTimeMult: 1.4,
-      provides: { storage: { water: 30 } }, effects: [{ type: 'passive_res', res: 'water', amt: 0.04 }],
+      provides: { stations: [{ job: 'water', slots: 2 }], storage: { water: 30 } }, effects: [{ type: 'passive_res', res: 'water', amt: 0.04 }],
       requires: { startUnlocked: true } },
 
     { id: 'rain_catcher', name: 'Rain Catcher', cat: 'survival', tier: 2, icon: '🌧️',
@@ -165,7 +165,7 @@
     { id: 'well', name: 'Well', cat: 'production', tier: 2, icon: '🕳️',
       desc: 'A dug well taps the water table. Reliable fresh water.',
       cost: { stone: 16, wood: 8, rope: 4 }, buildTime: 44, maxLevel: 4, upCostMult: 1.8, upTimeMult: 1.5,
-      provides: { storage: { water: 80 } }, effects: [{ type: 'passive_res', res: 'water', amt: 0.18 }],
+      provides: { stations: [{ job: 'water', slots: 3 }], storage: { water: 80 } }, effects: [{ type: 'passive_res', res: 'water', amt: 0.18 }],
       requires: { tech: ['water_mgmt'] } },
 
     { id: 'windmill', name: 'Windmill', cat: 'industry', tier: 4, icon: '🌬️',
@@ -420,6 +420,7 @@
   const byId = {};
   B.forEach((b) => {
     b.maxLevel = b.maxLevel || 1;
+    if (b.id !== 'grand_monument') b.maxLevel = Math.max(b.maxLevel, 6); // build once, upgrade many times
     b.upCostMult = b.upCostMult || 1.8;
     b.upTimeMult = b.upTimeMult || 1.5;
     b.provides = b.provides || {};

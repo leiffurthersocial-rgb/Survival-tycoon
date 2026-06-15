@@ -130,29 +130,23 @@ try {
         CG.Exploration.start(s, reg.def.id, pickers);
       }
       rebalance();
-      // build: new types first (unlock chains), then housing/storage pressure; cap duplicates
-      const DUP = (id) => { const D = CG.BLD[id]; const p = D.provides || {}; if (p.housing) return 14; if (p.storageAll || p.storage) return 8; if (p.stations) return 5; if (D.cat === 'civic' || D.cat === 'trade') return 2; return 1; };
-      if (s.queue.length < 3) {
+      // buildings are unique now: build each once, then grow the colony by UPGRADING
+      if (s.queue.length < 2) {
         const c = CG.Economy.cache(s);
-        const needHousing = c.housing <= s.survivors.length + 1;
+        const needHousing = c.housing <= s.survivors.length + 2;
         const anyFull = CG.RESOURCES.some((r) => !r.nocap && (s.resources[r.id] || 0) >= (c.cap[r.id] || 1e9) - 1);
-        let menu = CG.Construction.buildMenu(s).filter((m) => m.canNew && m.affordable && m.built < DUP(m.def.id));
-        menu.sort((a, b) => {
-          const rank = (m) => {
-            let r = (m.built === 0 ? 0 : 5) + m.def.tier * 0.3;
-            if (needHousing && m.def.cat === 'housing') r = -10 + m.def.tier * 0.3;   // critical: housing beats novelty
-            if (anyFull && m.def.cat === 'storage') r = Math.min(r, -8 + m.def.tier * 0.3);
-            return r;
-          };
-          return rank(a) - rank(b);
-        });
+        const menu = CG.Construction.buildMenu(s).filter((m) => m.canNew && m.affordable)
+          .sort((a, b) => (needHousing && b.def.cat === 'housing') - (needHousing && a.def.cat === 'housing') || a.def.tier - b.def.tier);
         if (menu[0]) CG.Construction.build(s, menu[0].def.id);
-      }
-      // light upgrades only when the build queue is clear, so construction/gathering aren't starved
-      if (i % 80 === 0 && s.queue.length === 0 && s.buildings.length) {
-        const up = s.buildings.filter((b) => b.level < CG.BLD[b.id].maxLevel)
-          .sort((a, b) => a.level - b.level)[0];
-        if (up && CG.Economy.canAfford(s, CG.Construction.upgradeCost(s, up))) CG.Construction.upgrade(s, up.uid);
+        else {
+          // everything available is built — upgrade (housing if tight, storage if full, else lowest level)
+          const ups = s.buildings.filter((b) => b.level < CG.BLD[b.id].maxLevel && !s.queue.some((q) => q.uid === b.uid) && CG.Economy.canAfford(s, CG.Construction.upgradeCost(s, b)));
+          ups.sort((a, b) => {
+            const score = (x) => { const D = CG.BLD[x.id]; let v = x.level; if (needHousing && (D.provides.housing)) v -= 8; if (anyFull && (D.provides.storageAll || D.provides.storage)) v -= 6; return v; };
+            return score(a) - score(b);
+          });
+          if (ups[0]) CG.Construction.upgrade(s, ups[0].uid);
+        }
       }
       // spend skill points greedily
       s.survivors.filter((x) => x.charId && x.skillPoints > 0).forEach((sv) => { const ch = CG.CHAR[sv.charId]; const node = ch.skills.find((n) => CG.Colony.canSpend(s, sv.charId, n.id)); if (node) CG.Colony.spendSkill(s, sv.charId, node.id); });

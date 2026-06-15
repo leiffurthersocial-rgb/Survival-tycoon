@@ -81,13 +81,30 @@
   const AUTO_PRIO = ['fish', 'water', 'forage', 'mine_stone', 'woodcut', 'hunt', 'farm', 'dig_clay', 'dig_sand',
     'sawmill', 'charcoal', 'kiln', 'smelt', 'tannery', 'ropewalk', 'weaver', 'bakery', 'blacksmith', 'glassworks', 'steelworks', 'build', 'research'];
   function autoAssignIdle(s, silent) {
-    let assigned = 0, pass = true;
+    let assigned = 0;
+    // 1) place idle heroes in their favored role first (e.g. Lenni → research)
+    s.survivors.forEach((sv) => {
+      if (sv.job || !sv.charId || onExp(s, sv.sid)) return;
+      const fav = CG.CHAR[sv.charId].favJob;
+      if (fav && isUnlocked(s, fav) && slotsFree(s, fav) > 0) { sv.job = fav; assigned++; E().recompute(s); }
+    });
+    // 2) round-robin remaining idle workers across useful jobs
+    let pass = true;
     while (pass && idleCount(s) > 0) {
       pass = false;
       for (const j of AUTO_PRIO) { if (idleCount(s) <= 0) break; if (slotsFree(s, j) > 0 && addToJob(s, j, 1)) { assigned++; pass = true; } }
     }
-    if (assigned && !silent) CG.emit('toast', { text: 'Assigned ' + assigned + ' idle worker' + (assigned > 1 ? 's' : '') + '.', type: 'good', icon: '🧰' });
+    if (assigned) { E().recompute(s); CG.emit('assign_changed'); if (!silent) CG.emit('toast', { text: 'Assigned ' + assigned + ' worker' + (assigned > 1 ? 's' : '') + ' (heroes to their best roles).', type: 'good', icon: '🧰' }); }
     return assigned;
+  }
+
+  // daily tax: a modest coin trickle from citizens; high rates anger them (see survival morale)
+  function taxTick(s, dt) {
+    if (!s.taxRate) return;
+    s._taxTimer = (s._taxTimer || 0) + (dt || 0.5) / C.DAY_SECONDS;
+    if (s._taxTimer < 1) return; s._taxTimer -= 1;
+    const coin = Math.round(s.survivors.length * C.TAX.perCitizen * s.taxRate);
+    if (coin > 0) { s.coin += coin; s.stats.coinEarned += coin; }
   }
 
   // ---- automation (unlocked by mid-game buildings; deliberately modest) ----
@@ -146,5 +163,5 @@
     return { ok: true };
   }
 
-  CG.Colony = { workersIn, slots, slotsFree, isUnlocked, assign, addToJob, removeFromJob, idleCount, popTick, addSettler, attractiveness, canSpend, spendSkill, onExp, growthStatus, autoAssignIdle, automationTick, autoUnlocked };
+  CG.Colony = { workersIn, slots, slotsFree, isUnlocked, assign, addToJob, removeFromJob, idleCount, popTick, addSettler, attractiveness, canSpend, spendSkill, onExp, growthStatus, autoAssignIdle, automationTick, autoUnlocked, taxTick };
 })(typeof window !== 'undefined' ? window : globalThis);

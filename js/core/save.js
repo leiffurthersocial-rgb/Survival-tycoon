@@ -51,6 +51,9 @@
       }
     });
     merged.automation = Object.assign({ autoAssign: false, autoExplore: false, autoResearch: false }, s.automation || {});
+    if (merged.taxRate == null) merged.taxRate = 0;
+    if (merged.faction === undefined) merged.faction = null;
+    merged.market = Object.assign({ mod: {}, stock: {}, day: 1 }, s.market || {});
     merged._cache = null;
     return merged;
   }

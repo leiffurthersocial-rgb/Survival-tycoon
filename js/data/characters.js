@@ -123,6 +123,44 @@
         { id: 'n_champion', name: 'Champion', icon: '👑', cost: 4, req: ['n_quarter', 'n_fortify'], desc: '+10 morale; +4% all production.', effects: [{ type: 'morale', amt: 10 }, { type: 'global_prod', mult: 1.04 }] },
       ],
     },
+    {
+      id: 'till', name: 'Till', role: 'Farmer & Forager', icon: '🌽', color: '#8db046',
+      img: 'assets/till.jpeg',
+      blurb: 'Till has dirt under his nails and a knack for making things grow. Fields, orchards and foraging parties all flourish under his care.',
+      affinity: ['farm', 'forage', 'fish'], favJob: 'farm',
+      base: [
+        { type: 'prod_mult', job: 'farm', perLevelMult: 0.035 },
+        { type: 'prod_mult', job: 'forage', perLevelMult: 0.025 },
+        { type: 'res_mult', res: 'crops', perLevelMult: 0.02 },
+      ],
+      skills: [
+        { id: 't_green', name: 'Green Thumb', icon: '🌱', cost: 1, req: [], desc: '+20% farming.', effects: [{ type: 'prod_mult', job: 'farm', mult: 1.2 }] },
+        { id: 't_forager', name: 'Wildcrafter', icon: '🧺', cost: 1, req: [], desc: '+20% foraging.', effects: [{ type: 'prod_mult', job: 'forage', mult: 1.2 }] },
+        { id: 't_orchard', name: 'Orchardist', icon: '🍎', cost: 2, req: ['t_green'], desc: '+15% fruit & crops.', effects: [{ type: 'res_mult', res: 'fruit', mult: 1.15 }, { type: 'res_mult', res: 'crops', mult: 1.15 }] },
+        { id: 't_rotation', name: 'Crop Master', icon: '🔄', cost: 2, req: ['t_forager'], desc: '+15% farming; +1 farmer slot.', effects: [{ type: 'prod_mult', job: 'farm', mult: 1.15 }, { type: 'station_add', job: 'farm', slots: 1 }] },
+        { id: 't_steward', name: 'Land Steward', icon: '🌾', cost: 3, req: ['t_orchard'], desc: 'Colonists get hungry 8% slower.', effects: [{ type: 'need_rate', need: 'hunger', mult: 0.92 }] },
+        { id: 't_harvest', name: 'Great Harvest', icon: '🚜', cost: 4, req: ['t_steward', 't_rotation'], desc: '+8 morale; +4% all production.', effects: [{ type: 'morale', amt: 8 }, { type: 'global_prod', mult: 1.04 }] },
+      ],
+    },
+    {
+      id: 'tusya', name: 'Tusya', role: 'Miner & Smith', icon: '⛏️', color: '#9c8772',
+      img: 'assets/tusya.jpeg',
+      blurb: 'Tusya reads stone like a book and bends iron to her will. Quarries run deep and forges burn hot wherever she works.',
+      affinity: ['mine_stone', 'smelt', 'blacksmith'], favJob: 'mine_stone',
+      base: [
+        { type: 'prod_mult', job: 'mine_stone', perLevelMult: 0.035 },
+        { type: 'res_mult', res: 'ironore', perLevelMult: 0.025 },
+        { type: 'refine_mult', perLevelMult: 0.012 },
+      ],
+      skills: [
+        { id: 'u_quarry', name: 'Quarrier', icon: '🪨', cost: 1, req: [], desc: '+20% stone.', effects: [{ type: 'prod_mult', job: 'mine_stone', mult: 1.2 }] },
+        { id: 'u_smelt', name: 'Furnace Master', icon: '🌋', cost: 1, req: [], desc: '+15% smelting.', effects: [{ type: 'prod_mult', job: 'smelt', mult: 1.15 }] },
+        { id: 'u_prospect', name: 'Prospector', icon: '🔍', cost: 2, req: ['u_quarry'], desc: '+15% iron ore & gems.', effects: [{ type: 'res_mult', res: 'ironore', mult: 1.15 }, { type: 'res_mult', res: 'gem', mult: 1.15 }] },
+        { id: 'u_forge', name: 'Master Forger', icon: '⚒️', cost: 2, req: ['u_smelt'], desc: '+15% smithing; +12% tool quality.', effects: [{ type: 'prod_mult', job: 'blacksmith', mult: 1.15 }, { type: 'tool_quality', mult: 1.12 }] },
+        { id: 'u_deep', name: 'Deepdelver', icon: '🕳️', cost: 3, req: ['u_prospect'], desc: '+10% all refining.', effects: [{ type: 'refine_mult', mult: 1.1 }] },
+        { id: 'u_titan', name: 'Ironheart', icon: '🛠️', cost: 4, req: ['u_deep', 'u_forge'], desc: '+5% all production; +10% steel.', effects: [{ type: 'global_prod', mult: 1.05 }, { type: 'res_mult', res: 'steel', mult: 1.1 }] },
+      ],
+    },
   ];
 
   const byId = {};

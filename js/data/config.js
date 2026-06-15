@@ -14,7 +14,7 @@
     SETTINGS_KEY: 'castaway_settings_v1',
 
     START: {
-      survivors: ['robin', 'lenni', 'leif', 'erim', 'jovan', 'leonidas'],
+      survivors: ['robin', 'lenni', 'leif', 'erim', 'jovan', 'leonidas', 'till', 'tusya'],
       resources: { fish: 18, fruit: 12, water: 22, sticks: 10, fiber: 8, wood: 0, stone: 2 },
       research: 0, coin: 8,
       baseStorage: 60,         // per-resource cap before storage buildings
@@ -107,7 +107,7 @@
     TRADE: { baseMargin: 0.6, sellTax: 1.0 },
 
     // Stage thresholds by progress score (see economy.computeProgress)
-    STAGE_THRESHOLDS: [0, 8, 24, 55, 110, 200, 340, 520],
+    STAGE_THRESHOLDS: [0, 10, 32, 72, 145, 260, 430, 650],
     STAGE_NAMES: [
       '', 'Shipwreck Survival', 'Permanent Camp', 'Village',
       'Growing Settlement', 'Colony', 'Island Town', 'Prosperous Island',
@@ -125,5 +125,19 @@
   C.FOOD_VALUE = { fish: 1, fruit: 0.8, meat: 1.4, bread: 1.6, crops: 1.0 };
   C.LUXURY_RES = ['spice', 'pearl', 'rarewood', 'exoticpet', 'gem'];
 
+  C.TAX = { perCitizen: 0.5, moraleFreeRate: 0.4, moralePenaltyPerRate: 16 }; // coin/citizen/day at 100% rate
+
   CG.C = C;
+
+  // Starting factions — pick one at the start. Balanced: each helps a different path.
+  CG.FACTIONS = {
+    woodsmen: { name: 'The Woodsmen', icon: '🪵', desc: '+25% wood and faster building. Born to tame the forest.',
+      effects: [{ type: 'res_mult', res: 'wood', mult: 1.25 }, { type: 'prod_mult', job: 'woodcut', mult: 1.2 }, { type: 'build_speed', mult: 1.1 }] },
+    fishers: { name: 'The Tidecallers', icon: '🐟', desc: '+30% fishing and slower thirst. The sea provides.',
+      effects: [{ type: 'prod_mult', job: 'fish', mult: 1.3 }, { type: 'need_rate', need: 'thirst', mult: 0.9 }] },
+    builders: { name: 'The Masons', icon: '🧱', desc: 'Build 20% faster for 12% less. Master engineers.',
+      effects: [{ type: 'build_speed', mult: 1.2 }, { type: 'build_cost', mult: 0.88 }, { type: 'prod_mult', job: 'mine_stone', mult: 1.15 }] },
+    scholars: { name: 'The Scholars', icon: '🔬', desc: '+25% research and faster worker training. Knowledge first.',
+      effects: [{ type: 'research_mult', mult: 1.25 }, { type: 'xp_mult', mult: 1.2 }] },
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

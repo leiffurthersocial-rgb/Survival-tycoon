@@ -20,7 +20,7 @@
     return true;
   }
 
-  function isUnique(def) { return def.id === 'grand_monument'; }
+  function isUnique(def) { return true; } // one of each building; grow it by upgrading
 
   function canBuildNew(s, def) {
     if (!unlocked(s, def)) return false;

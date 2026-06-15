@@ -56,7 +56,7 @@
       case 'foresight': c.add.foresight += scA(e.amt); break;
       case 'morale': c.moraleBonus += scA(e.amt); break;
       case 'storage_add': c.storageSpecific[e.res] = (c.storageSpecific[e.res] || 0) + scA(e.amt); break;
-      case 'passive_res': c.passiveRes[e.res] = (c.passiveRes[e.res] || 0) + e.amt * (1 + 0.6 * (L - 1)); break;
+      case 'passive_res': c.passiveRes[e.res] = (c.passiveRes[e.res] || 0) + e.amt * (1 + 0.8 * (L - 1)); break;
       case 'station_add': c.stationAdds[e.job] = (c.stationAdds[e.job] || 0) + (e.slots || 1); break;
       case 'unlock_job': c.unlockedJobs[e.job] = true; break;
       case 'victory': c.victoryBuilding = true; break;
@@ -73,7 +73,7 @@
     // buildings (scaled by level)
     s.buildings.forEach((b) => {
       const D = CG.BLD[b.id]; if (!D) return;
-      const L = b.level, lm = 1 + 0.6 * (L - 1), p = D.provides || {};
+      const L = b.level, lm = 1 + 0.8 * (L - 1), p = D.provides || {};
       if (p.housing) c.housing += p.housing * lm;
       if (p.morale) c.moraleBonus += p.morale * lm;
       if (p.storageAll) c.storageAll += p.storageAll * lm;
@@ -95,6 +95,9 @@
       const ch = CG.CHAR[sv.charId];
       CG.charEffects(ch, sv.level, sv.skills).forEach((e) => applyEffect(c, e, 1));
     });
+
+    // starting faction bonus
+    if (s.faction && CG.FACTIONS && CG.FACTIONS[s.faction]) CG.FACTIONS[s.faction].effects.forEach((e) => applyEffect(c, e, 1));
 
     // active buffs (events)
     const today = s.time.day;
