@@ -1,0 +1,11 @@
+# Dependencies (jsdom is only used by the dev test harness in tools/)
+node_modules/
+package.json
+package-lock.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

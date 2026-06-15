@@ -1,0 +1,103 @@
+/* systems/colony.js — worker assignment, population growth, character skill trees. */
+(function (root) {
+  'use strict';
+  const CG = (root.CG = root.CG || {});
+  const C = CG.C, E = () => CG.Economy;
+
+  function workersIn(s, job) { return s.survivors.filter((sv) => sv.job === job).length; }
+  function slots(s, job) { const c = E().cache(s); return c.slots[job] || 0; }
+  function slotsFree(s, job) { return slots(s, job) - workersIn(s, job); }
+  function isUnlocked(s, job) { const c = E().cache(s); return !!c.unlockedJobs[job]; }
+
+  function assign(s, sid, job) {
+    const sv = CG.State.survivorById(s, sid); if (!sv) return { ok: false };
+    // can't reassign someone who is away on an expedition
+    if (s.regions.expeditions.some((ex) => ex.explorers.indexOf(sid) >= 0)) return { ok: false, why: 'On expedition' };
+    if (job == null) { sv.job = null; E().recompute(s); CG.emit('assign_changed'); return { ok: true }; }
+    if (!isUnlocked(s, job)) return { ok: false, why: 'Job locked' };
+    if (sv.job !== job && slotsFree(s, job) <= 0) return { ok: false, why: 'No free slots' };
+    sv.job = job; E().recompute(s); CG.emit('assign_changed'); return { ok: true };
+  }
+
+  // quick helper: add N workers to a job from the idle pool (UI +/- controls)
+  function addToJob(s, job, n) {
+    n = n || 1; let done = 0;
+    for (let i = 0; i < n; i++) {
+      if (slotsFree(s, job) <= 0) break;
+      const idle = s.survivors.find((sv) => !sv.job && !onExp(s, sv.sid));
+      if (!idle) break;
+      idle.job = job; done++;
+    }
+    if (done) { E().recompute(s); CG.emit('assign_changed'); }
+    return done;
+  }
+  function removeFromJob(s, job, n) {
+    n = n || 1; let done = 0;
+    for (let i = 0; i < n; i++) {
+      const w = s.survivors.find((sv) => sv.job === job && !onExp(s, sv.sid));
+      if (!w) break; w.job = null; done++;
+    }
+    if (done) { E().recompute(s); CG.emit('assign_changed'); }
+    return done;
+  }
+  function onExp(s, sid) { return s.regions.expeditions.some((ex) => ex.explorers.indexOf(sid) >= 0); }
+
+  function idleCount(s) { return s.survivors.filter((sv) => !sv.job && !onExp(s, sv.sid)).length; }
+
+  // ---- population growth ----
+  function attractiveness(s) {
+    const c = E().cache(s);
+    return 4 + c.add.attract + Math.max(0, (s.stats.morale - 50) * 0.2);
+  }
+
+  function popTick(s, dt) {
+    s._popTimer = (s._popTimer || 0) + (dt || 1) / C.DAY_SECONDS; // counts in-game days
+    if (s._popTimer < C.POP.checkEveryDays) return;
+    s._popTimer = 0;
+    const c = E().cache(s);
+    const pop = s.survivors.length;
+    if (c.housing <= pop) return;                 // need a free bed
+    if (E().foodStock(s) < pop * 6) return;       // need a food cushion
+    if ((s.resources.water || 0) < pop * 4) return;
+    if (s.stats.morale < C.POP.moraleForGrowth) return;
+
+    let chance = (s.stats.morale - 50) / 120 + attractiveness(s) * 0.015 + (c.housing - pop) * 0.02;
+    chance *= c.mult.pop_growth;
+    chance = CG.clamp(chance, 0, C.POP.maxChancePerCheck);
+    if (CG.RNG.chance(chance)) addSettler(s, 'A new settler was drawn to your growing colony.');
+  }
+
+  function addSettler(s, reason) {
+    const sv = CG.State.makeSettler();
+    s.survivors.push(sv);
+    s.stats.settlersArrived++;
+    s.stats.population = s.survivors.length;
+    if (s.survivors.length > s.stats.peakPopulation) s.stats.peakPopulation = s.survivors.length;
+    CG.State.log(s, (reason || 'A new settler arrived.') + ' Welcome, ' + sv.name + '!', 'good');
+    CG.emit('toast', { text: sv.name + ' joined the colony! Assign them a job.', type: 'good', icon: '🧑' });
+    CG.emit('population_changed');
+    return sv;
+  }
+
+  // ---- character skill trees ----
+  function canSpend(s, charId, skillId) {
+    const ch = CG.CHAR[charId]; const sv = CG.State.namedSurvivor(s, charId);
+    if (!ch || !sv) return false;
+    const node = ch.skills.find((n) => n.id === skillId); if (!node) return false;
+    if (sv.skills[skillId]) return false;
+    if (sv.skillPoints < node.cost) return false;
+    return (node.req || []).every((r) => sv.skills[r]);
+  }
+  function spendSkill(s, charId, skillId) {
+    if (!canSpend(s, charId, skillId)) return { ok: false };
+    const ch = CG.CHAR[charId]; const sv = CG.State.namedSurvivor(s, charId);
+    const node = ch.skills.find((n) => n.id === skillId);
+    sv.skillPoints -= node.cost; sv.skills[skillId] = true;
+    CG.State.log(s, sv.name + ' learned ' + node.name + '.', 'good');
+    CG.emit('toast', { text: sv.name + ' learned ' + node.name + '!', type: 'good', icon: node.icon });
+    E().recompute(s); CG.emit('char_changed');
+    return { ok: true };
+  }
+
+  CG.Colony = { workersIn, slots, slotsFree, isUnlocked, assign, addToJob, removeFromJob, idleCount, popTick, addSettler, attractiveness, canSpend, spendSkill, onExp };
+})(typeof window !== 'undefined' ? window : globalThis);
