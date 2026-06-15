@@ -229,7 +229,7 @@
       desc: 'Fires clay into hard bricks for permanent buildings.',
       cost: { stone: 18, clay: 12, wood: 8 }, buildTime: 70, maxLevel: 4, upCostMult: 1.8, upTimeMult: 1.5,
       provides: { stations: [{ job: 'kiln', slots: 2 }] },
-      recipe: { job: 'kiln', inputs: { clay: 2 }, outputs: { brick: 1 }, rate: 0.10 },
+      recipe: { job: 'kiln', inputs: { clay: 2, sand: 1 }, outputs: { brick: 1 }, rate: 0.10 },
       effects: [{ type: 'unlock_job', job: 'kiln' }], requires: { tech: ['masonry'] } },
 
     { id: 'smelter', name: 'Smelter', cat: 'industry', tier: 4, icon: '🌋',

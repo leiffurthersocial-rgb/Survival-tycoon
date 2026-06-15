@@ -63,7 +63,7 @@
     // Production: base per-second outputs per worker for raw gather jobs.
     // (Refinery jobs use recipes from tech/buildings.)
     BASE_PROD: {
-      forage: { fiber: 0.10, sticks: 0.08, fruit: 0.05 },
+      forage: { fiber: 0.10, sticks: 0.08, fruit: 0.05, wood: 0.02 },
       woodcut: { wood: 0.12 },
       water: { water: 0.16 },
       fish: { fish: 0.11 },

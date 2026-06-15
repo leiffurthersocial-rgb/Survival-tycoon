@@ -60,6 +60,7 @@
     const palms = el('div', { class: 'scene-decor', html: '🌴🌴🌳' });
     container.append(sky, sun, sea, island, palms, bLayer, banner);
     built = true;
+    lastSig = ''; // force the freshly-built layer to repopulate
     renderBuildings(CG.state);
   }
 
