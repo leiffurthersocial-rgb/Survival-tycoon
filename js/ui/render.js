@@ -8,10 +8,18 @@
   const imgOK = {};
   function probeImages() {
     CG.CHARS.forEach((ch) => {
-      const im = new Image();
-      im.onload = () => { imgOK[ch.id] = ch.img; CG.emit('avatar_ready', { id: ch.id }); };
-      im.onerror = () => { imgOK[ch.id] = false; };
-      im.src = ch.img;
+      // try common name/case/extension variants so photos load however they're saved
+      const C = CG.cap(ch.id);
+      const cands = ['assets/' + C + '.jpeg', 'assets/' + ch.id + '.jpeg', 'assets/' + C + '.jpg', 'assets/' + ch.id + '.jpg', 'assets/' + C + '.png', ch.img];
+      let i = 0;
+      const tryNext = () => {
+        if (i >= cands.length) { imgOK[ch.id] = false; return; }
+        const src = cands[i++]; const im = new Image();
+        im.onload = () => { imgOK[ch.id] = src; CG.emit('avatar_ready', { id: ch.id }); };
+        im.onerror = tryNext;
+        im.src = src;
+      };
+      tryNext();
     });
   }
 
